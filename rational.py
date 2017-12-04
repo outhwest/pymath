@@ -6,8 +6,14 @@ class MyRational:
     __slots__ = ['fraction', 'neg']
 
     def __init__(self, num=1, den=1, neg=False, reduce=False):
+
+        if isinstance(num, MyRational):
+            self.fraction = array('L', num.fraction)
+            self.neg = num.neg
         self.fraction = array('L', (num,den))
         self.neg = neg
+        if den == 0:
+            raise ZeroDivisionError("Denominator must be nonzero integer")
         if reduce:
             self.reduced()
     
@@ -26,6 +32,9 @@ class MyRational:
 
     def __int__(self):
         return int(float(self))
+
+    def __hash__(self):
+        return hash(float(self))
     
     def reduced(self, gcd=gcd):
         factor = gcd(self.fraction[0], self.fraction[1])
@@ -38,7 +47,9 @@ class MyRational:
 
     def __add__(self,other):
         if not isinstance(other, MyRational):
-            raise TypeError("Other argument should be of type MyRational")
+            if isinstance(other, int):
+                return self + MyRational(other)
+            return NotImplemented
         a,b = self.fraction
         c,d = other.fraction
         if self.neg:
@@ -54,6 +65,10 @@ class MyRational:
         return MyRational(numerator, b*d, negative, True)
 
     def __sub__(self, other):
+        if not isinstance(other, MyRational):
+            if isinstance(other, int):
+                return self - MyRational(other)
+            return NotImplemented
         a,b = other.fraction
         return self + MyRational(a, b, True, True)
         
@@ -62,15 +77,64 @@ class MyRational:
         return MyRational(a,b, False)
 
     def __eq__(self, other):
+        if not isinstance(other, MyRational):
+            if isinstance(other, int):
+                return self == MyRational(other)
+            return NotImplemented
         diff = self - other
         return diff.fraction[0] == 0
 
     def __lt__(self, other):
+        if not isinstance(other, MyRational):
+            if isinstance(other, int):
+                return self < MyRational(other)
+            return NotImplemented
         diff = self - other
         if diff.fraction[0] == 0:
             return False
         return diff.neg
 
     def __le__(self, other):
+        if not isinstance(other, MyRational):
+            if isinstance(other, int):
+                return self <= MyRational(other)
+            return NotImplemented
         diff = self - other
         return diff.neg or diff.fraction[0] == 0
+
+    def __mul__(self, other):
+        a,b = self.fraction
+        if isinstance(other, int):
+            numerator = a * other
+            negative = (other < 0)
+            if negative:
+                numerator *= -1
+            negative ^= self.neg
+            return MyRational(numerator, b, negative, True)
+        if isinstance(other, MyRational):
+            c,d = other.fraction
+            numerator = a*c
+            denominator = b*d
+            negative = self.neg ^ other.neg
+            return MyRational(numerator, denominator, negative, True)
+        return NotImplemented
+
+    def __truediv__(self, other):
+        a,b = self.fraction
+        if not isinstance(other, MyRational):
+            if isinstance(other, int):
+                denominator = b * other
+                negative = (other < 0)
+                if negative:
+                    denominator *= -1
+                negative ^= self.neg
+                return MyRational(a, denominator, negative, True)
+            return NotImplemented
+        c,d = other.fraction
+        numerator = a*d
+        denominator = b*c
+        negative = self.neg ^ other.neg
+        return MyRational(numerator, denominator, negative, True)
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
