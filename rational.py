@@ -10,7 +10,15 @@ class MyRational:
         if isinstance(num, MyRational):
             self.fraction = array('L', num.fraction)
             self.neg = num.neg
-        self.fraction = array('L', (num,den))
+
+        if num < 0:
+            num *= -1
+            neg ^= True
+            
+        try:
+            self.fraction = array('L', (num,den))
+        except OverflowError:
+            self.fraction = [num, den]
         self.neg = neg
         if den == 0:
             raise ZeroDivisionError("Denominator must be nonzero integer")
@@ -45,6 +53,16 @@ class MyRational:
     def __neg__(self):
         self.neg ^= True
 
+    def scale(self, intScalar, reduce=False):
+        if not isinstance(intScalar, int):
+            raise TypeError
+        try:
+            self.fraction[0] *= intScalar
+        except OverflowError:
+            self.fraction = [self.fraction[0] * intScalar, self.fraction[1]]
+        if reduce:
+            self.reduced()
+
     def __add__(self,other):
         if not isinstance(other, MyRational):
             if isinstance(other, int):
@@ -63,6 +81,7 @@ class MyRational:
             
         #calculation (a/b) + (c/d) = (ad + bc)/bd but reduced
         return MyRational(numerator, b*d, negative, True)
+    __radd__ = __add__
 
     def __sub__(self, other):
         if not isinstance(other, MyRational):

@@ -51,7 +51,10 @@ class ListMatrix:
     def __len__(self):
         return self.dim[0] * self.dim[1]
 
-    def scale(self, scalar):
+    def scale(self, scalar, inPlace=False):
+        if inPlace and isinstance(scalar, int):
+            for i in range(self.__len__):
+                self._list[i].scale(scalar)
         for i in range(len(self)):
             self._list[i] *= scalar
         return self
@@ -76,6 +79,31 @@ class ListMatrix:
         else:
             raise TypeError("Multiplication can only be performed with scalars")
 
+    def rows(self):
+        for i in range(0, self.__len__(), self.dim[1]):
+            yield self._list[i:i + self.dim[1]]
+
+    def cols(self):
+        for i in range(0, self.dim[1]):
+            curCol = []
+            for j in range(self.dim[0]):
+                curCol.append(self._list[i+j*self.dim[1]])
+            yield curColue
+
+    def diagonalIter(self):
+        for i in range(0, self.__len__(), self.dim[1] + 1):
+            yield self._list[i]
+        
 
 def eyesn(n):
     return ListMatrix(None, n, n)
+
+def toeplitz(row, col=None):
+    newMat = ListMatrix(None, len(row))
+    if not col:
+        assert len(row) == len(col)
+        assert row[0] == col[0]
+    for i in range(1):
+        pass
+    
+    return newMat
