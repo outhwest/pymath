@@ -126,7 +126,7 @@ class MyPolynomial(MyVector):
             if verbose:
                 workList = [MyRational(0)]*self.dim
                 workList[i] = MyRational(coeff)
-                print(MyPolynomial(workList), "evaluates to", additional)
+                print(i, MyPolynomial(workList), "evaluates to", additional)
 
             total += additional
             

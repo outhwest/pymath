@@ -23,6 +23,8 @@ class ListMatrix:
                     if ncols != rowLen:
                         raise TypeError("init should be an iterable of equal-length iterables")
         else:
+            if mrows==0 or ncols==0:
+                mrows, ncols = (0,0)
             for i in range(mrows):
                 for j in range(ncols):
                     if i == j:
@@ -36,17 +38,20 @@ class ListMatrix:
         retList = ['']
         for i in range(self.dim[0]):
             for j in range(self.dim[1]):
-                retList.append(str(self._list[i*self.dim[1] + j]))
+                retList.append(str(self._list[i*self.dim[1] + j]) + '\t')
             retList.append('\n')
         return ' '.join(retList)
     
     def __repr__(self):
-        retList = ["ListMatrix(%d by %d): ["]
-        for item in self._list:
-            retList.append(str(item))
-            retList.append(',')
-        retList[-1] = ']'
-        return ''.join(retList) % tuple(self.dim)
+        if self.dim[0] == 0:
+            return "ListMatrix(0 by 0): []"
+        else:
+            retList = ["ListMatrix(%d by %d): ["]
+            for item in self._list:
+                retList.append(str(item))
+                retList.append(',')
+            retList[-1] = ']'
+            return ''.join(retList) % tuple(self.dim)
 
     def __len__(self):
         return self.dim[0] * self.dim[1]
@@ -99,11 +104,24 @@ def eyesn(n):
     return ListMatrix(None, n, n)
 
 def toeplitz(row, col=None):
-    newMat = ListMatrix(None, len(row))
-    if not col:
-        assert len(row) == len(col)
+    rowLen = len(row)
+    newMat = ListMatrix(None, rowLen, rowLen)
+    if col:
+        assert rowLen == len(col)
         assert row[0] == col[0]
-    for i in range(1):
-        pass
-    
+
+        for i in range(rowLen):
+            for j in range(i, rowLen*rowLen,rowLen+1):
+                newMat._list[j] = row[i]
+            for k in range(rowLen*i, rowLen*rowLen, rowLen + 1):
+                newMat._list[k] = col[i]
+                
+    else:
+        for i in range(rowLen):
+            for j in range(i,rowLen*rowLen,rowLen+1):
+                newMat._list[j] = row[i]
+                print("Subbing i=%d's %d into j=%d"%(i,row[i], j),":\n",newMat)
+            for k in range(rowLen*i, rowLen*rowLen, rowLen + 1):
+                newMat._list[k] = row[i]
+                print("Subbing i=%d's %d into k=%d"%(i,row[i], k),":\n",newMat)
     return newMat
