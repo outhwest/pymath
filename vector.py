@@ -1,4 +1,6 @@
 from rational import MyRational
+from primes import Factorizer, lcm
+import functools
 
 class MyVector():
     __slots__ = ["dim","type", "_list"]
@@ -131,4 +133,45 @@ class MyPolynomial(MyVector):
             total += additional
             
         return total
+
+    def ratRoots(self, pg=None):
+        roots = []
+        an = 0
+        for a in self._list[::-1]:
+            if a != 0:
+                an = a
+                break
+        if not an:
+##            print("Empty Polynomial")
+            return []
+        #Scale into an integer-coefficient polynomial
+        if self.type == MyRational:
+            dens = [a.fraction[1] for a in self._list]
+##            print([den for den in dens if den != 1])
+            scale = functools.reduce(lcm, dens)
+            a0 = self._list[0] * scale
+            an *= scale
+##            print("Scaled by", scale)
+        else:
+            a0 = self._list[0]
+        #print(a0,an)    
+        #build candidates list with Rational Root Theorem (Naive)
+        f0 = Factorizer(a0, pg)
+        fn = Factorizer(an, pg)
+        #print(f0,fn)
+        div0 = f0.divisors()
+        divn = fn.divisors()
+##        print(div0,divn)
+        candidates = [MyRational(d0,dn, False, True) for d0 in div0 for dn in divn]
+        negs = [-1*c for c in candidates]
+        candidates.extend(negs)
+        if a0 == 0:
+            candidates.append(0)
+        #test candidates
+        for c in candidates:
+##            print(c)
+            if self.evaluate(c) == 0:
+##                print("\tWorks")
+                roots.append(c)
+        return roots
 

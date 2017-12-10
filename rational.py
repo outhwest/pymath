@@ -263,6 +263,16 @@ class MyRational:
         self.fraction[1] = temp
         return self
 
+    def isInt(self):
+        return (self.fraction[1] == 1)
+
+    def isAbsLessThanOne(self):
+        return (self.fraction[0] < self.fraction[1])
+
+    def isOne(self):
+        return (self.fraction[0] == self.fraction[1]) and not self.neg
+
+
 def contFracToRat(contFrac, verbose=False):
     if len(contFrac) == 0:
         return MyRational(0)
