@@ -6,6 +6,10 @@ class MyVector():
     __slots__ = ["dim","type", "_list"]
 
     def __init__(self, iterable=None, myType=None):
+        if not iterable:
+            iterable = []
+            if not myType:
+                self.type = int
         self._list = list(iterable)
         self.dim = len(self._list)
         if self.dim > 0:
@@ -24,7 +28,10 @@ class MyVector():
         for item in self._list:
             retList.append(repr(item))
             retList.append(', ')
-        retList[-1] = '])'
+        if self.dim > 0:
+            retList[-1] = '])'
+        else:
+            return "MyVector([])"
         return ''.join(retList)
 
     def __str__(self):
@@ -32,7 +39,10 @@ class MyVector():
         for item in self._list:
             retList.append(str(item))
             retList.append(', ')
-        retList[-1] = '] of type %s)'
+        if self.dim > 0:
+            retList[-1] = '] of type %s)'
+        else:
+            return "0-length v([])"
         return ''.join(retList) % (self.dim, self.type)
 
     def __len__(self):
@@ -81,18 +91,23 @@ class MyVector():
 class MyPolynomial(MyVector):
 
     def __repr__(self):
-        retList = ["MyPolynomial(["]
-        for item in self._list:
-            retList.append(repr(item))
-            retList.append(', ')
-        retList[-1] = '])'
-        return ''.join(retList)
+        if self.dim > 0:
+            retList = ["MyPolynomial(["]
+            for item in self._list:
+                retList.append(repr(item))
+                retList.append(', ')
+            retList[-1] = '])'
+            return ''.join(retList)
+        else:
+            return "MyPolynomial([])"
 
     def __str__(self):
         retList = ["( "]
-        for i in range(self.dim):
-            if self._list[i] != 0:
-                retList.append(str(self._list[i]))
+        for i in range(self.dim - 1, -1, -1):
+            coeff = self._list[i]
+            if coeff != 0:
+                if i == 0 or coeff != 1:
+                    retList.append(str(coeff))
                 if i == 1:
                     retList.append("x")
                 if i > 1:
@@ -108,8 +123,21 @@ class MyPolynomial(MyVector):
             self._list.pop(0)
         self.dim -= 1
         return self
+
+    def _rightShift(self, i=1):
+        self.dim += i
+        newList = []
+        for j in range(i):
+            newList.append(self.type())
+        newList.extend(self._list)
+        self._list = newList
+        return self
     
     def derivative(self):
+        if self.dim == 0:
+            return None
+        if self.dim == 1:
+            return MyPolynomial([0])
         return MyPolynomial([i*item for (i, item) in enumerate(self._list)])._leftShift()
         
     def evaluate(self, x=0, verbose=False):
@@ -144,29 +172,30 @@ class MyPolynomial(MyVector):
         if not an:
 ##            print("Empty Polynomial")
             return []
-        #Scale into an integer-coefficient polynomial
-        if self.type == MyRational:
-            dens = [a.fraction[1] for a in self._list]
-##            print([den for den in dens if den != 1])
-            scale = functools.reduce(lcm, dens)
-            a0 = self._list[0] * scale
-            an *= scale
-##            print("Scaled by", scale)
+        a0 = self._list[0]
+        if a0 != 0:
+            #Scale into an integer-coefficient polynomial
+            if self.type == MyRational:
+                dens = [a.fraction[1] for a in self._list]
+    ##            print([den for den in dens if den != 1])
+                scale = functools.reduce(lcm, dens)
+                a0 *= scale
+                an *= scale
+    ##            print("Scaled by", scale)
+##            print(a0,an)    
+            #build candidates list with Rational Root Theorem (Naive)
+            f0 = Factorizer(a0, pg)
+            fn = Factorizer(an, pg)
+##            print(f0,fn)
+            div0 = f0.divisors()
+            divn = fn.divisors()
+##            print(div0,divn)
+            candidates = [MyRational(d0,dn, False, True) for d0 in div0 for dn in divn]
+            negs = [-1*c for c in candidates]
+            candidates.extend(negs)
         else:
-            a0 = self._list[0]
-        #print(a0,an)    
-        #build candidates list with Rational Root Theorem (Naive)
-        f0 = Factorizer(a0, pg)
-        fn = Factorizer(an, pg)
-        #print(f0,fn)
-        div0 = f0.divisors()
-        divn = fn.divisors()
-##        print(div0,divn)
-        candidates = [MyRational(d0,dn, False, True) for d0 in div0 for dn in divn]
-        negs = [-1*c for c in candidates]
-        candidates.extend(negs)
-        if a0 == 0:
-            candidates.append(0)
+            newP = MyPolynomial(self._list[1:])
+            candidates = {MyRational(0)}.union(newP.ratRoots())
         #test candidates
         for c in candidates:
 ##            print(c)
@@ -174,4 +203,56 @@ class MyPolynomial(MyVector):
 ##                print("\tWorks")
                 roots.append(c)
         return roots
+
+    def factor(self, pg=None):
+        roots = self.ratRoots(pg)
+        factors = []
+        for root in roots:
+            num, den = root.fraction
+            if root.neg:
+                num *= 1
+            factors.append(MyPolynomial([num,den]))
+
+        return factors
+
+    def __add__(self, other):
+        if isinstance(other, MyPolynomial):
+            diff = self.dim - other.dim
+            
+            if diff < 0:
+                smaller = self
+                bigger = other
+                diff *= -1
+            else:
+                smaller = other
+                bigger = self
+            
+            for i in range(diff):
+                smaller._list.append(smaller.type())
+            smaller = MyPolynomial(smaller._list)
+            
+            return MyVector.__add__(smaller,bigger)
+        return NotImplemented
+        
+
+    def __mul__(self, other):
+        if isinstance(other, MyPolynomial):
+            result = MyPolynomial([0])
+            if len(other) < len(self):
+                first = other
+                sec = self
+            else:
+                first = self
+                sec = other
+                
+            for i in range(first.dim):
+##                print("result is", result)
+                p = MyPolynomial([first._list[i] * term for term in sec._list])
+                p._rightShift(i)
+##                print("adding:", p)
+                result += p
+                
+            return result
+        
+        return NotImplemented
 

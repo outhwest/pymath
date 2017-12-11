@@ -5,7 +5,7 @@ class MyRational:
 
     __slots__ = ['fraction', 'neg']
 
-    def __init__(self, num=1, den=1, neg=False, reduce=False):
+    def __init__(self, num=0, den=1, neg=False, reduce=False):
 
         if isinstance(num, MyRational):
             den = num.fraction[1]
