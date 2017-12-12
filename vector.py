@@ -21,7 +21,7 @@ class MyVector():
                 if not isinstance(item, self.type):
                     raise TypeError("All items must be of type %s" % self.type)
         else:
-            self.type = myType
+            self.type = myType if myType else int
 
     def __repr__(self):
         retList = ["MyVector(["]
@@ -89,7 +89,7 @@ class MyVector():
 
 
 class MyPolynomial(MyVector):
-
+    __slots__ = []
     def __repr__(self):
         if self.dim > 0:
             retList = ["MyPolynomial(["]
@@ -226,7 +226,7 @@ class MyPolynomial(MyVector):
             else:
                 smaller = other
                 bigger = self
-            
+##            print("Adding %s to %s and smaller is %s" % (self,other,smaller))
             for i in range(diff):
                 smaller._list.append(smaller.type())
             smaller = MyPolynomial(smaller._list)
@@ -253,6 +253,40 @@ class MyPolynomial(MyVector):
                 result += p
                 
             return result
-        
+        if isinstance(other, (int, MyRational)):
+            return MyVector.__mul__(self, other)
         return NotImplemented
 
+    __rmul__ = __mul__
+
+    def __imul__(self, other):
+        if isinstance(other, (int, MyRational)):
+            for i in range(self.__len__()):
+                self._list[i] *= other
+            return self
+        return NotImplemented
+
+def lgInterpolate(points):
+    try:
+        points = dict(points)
+    except ValueError:
+        raise TypeError("points should be a list of 2-tuples, instead it's %s" % type(points))
+
+    n = len(points)
+    lgFactors = {x:MyPolynomial([-1*x, 1]) for x in points.keys()}
+
+    retPoly = MyPolynomial()
+    for x, y in points.items():
+        coeff = MyRational(y)
+        addend = MyPolynomial([1])
+        for k, v in lgFactors.items():
+##            print('\t',x, y, k, v)
+            if x != k:
+                addend *= v
+                coeff /= (x - k)
+##        print(coeff, addend, retPoly)
+        addend *= coeff
+        retPoly += addend
+
+    return retPoly
+        

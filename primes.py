@@ -1,6 +1,7 @@
 from math import gcd
 from array import array
 from collections import defaultdict
+import pickle
 
 def sieve(psSoFar, toCheck):
     while len(toCheck) > 0:
@@ -71,6 +72,9 @@ class PrimeGenerator:
         for p in self.primes:
             if p < n:
                 yield p
+
+class PickledPrimes(PrimeGenerator):
+    pass
 
 def isqrt(n):
     prev = 0

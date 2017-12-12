@@ -12,9 +12,14 @@ class MyRational:
             neg ^= num.neg
             num = num.fraction[0]
 
+        if den < 0:
+            num *= -1
+            den *= -1
+            
         if num < 0:
             num *= -1
             neg ^= True
+
             
         try:
             self.fraction = array('L', (num,den))
@@ -29,6 +34,12 @@ class MyRational:
     def __str__(self):
         if self.fraction[0] == 0:
             return "(0)"
+        elif self.fraction[1] == 1:
+            if self.neg:
+                retStr = "(-%d)"
+            else:
+                retStr = "(%d)"
+            return retStr % (self.fraction[0])
         else:
             if self.neg:
                 retStr = "(-%d/%d)"
